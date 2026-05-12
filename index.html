@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto de Extinción — JS nº 22 Barcelona</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f4f0;--bg3:#eeedea;
+  --bg-info:#e6f1fb;--bg-warn:#faeeda;--bg-success:#eaf3de;--bg-danger:#fcebeb;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --text-info:#185fa5;--text-warn:#854f0b;--text-success:#3b6d11;--text-danger:#a32d2d;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --r:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --bg-info:#0c447c;--bg-warn:#633806;--bg-success:#27500a;--bg-danger:#791f1f;
+  --text:#f0ede8;--text2:#b4b2a9;--text3:#888780;
+  --text-info:#b5d4f4;--text-warn:#fac775;--text-success:#c0dd97;--text-danger:#f7c1c1;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;line-height:1.6;padding:1.5rem 1rem}
+.container{max-width:860px;margin:0 auto;background:var(--bg);border-radius:var(--rl);border:.5px solid var(--border);padding:1.5rem}
+header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:.5px solid var(--border)}
+header h1{font-size:19px;font-weight:600}
+header p{font-size:12px;color:var(--text2);margin-top:3px}
+.steps{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:.5px solid var(--border)}
+.step-btn{font-size:13px;padding:8px 18px;cursor:pointer;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text2);font-weight:400}
+.step-btn.active{color:var(--text-info);border-bottom-color:var(--text-info);font-weight:500}
+.step-panel{display:none}.step-panel.active{display:block}
+.sec{margin-bottom:1.25rem}
+.sec h3{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px;padding-bottom:6px;border-bottom:.5px solid var(--border)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
+@media(max-width:580px){.row2,.row3{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:12px;color:var(--text2)}
+.f label span{color:var(--text-danger)}
+.f input,.f select,.f textarea{font-size:14px;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;width:100%}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:#378add;box-shadow:0 0 0 3px rgba(55,138,221,.15)}
+.f input[readonly]{background:var(--bg2);color:var(--text2);cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+.card{background:var(--bg2);border-radius:var(--r);padding:10px 12px}
+.card.hi{background:var(--bg-info)}.card.su{background:var(--bg-success)}.card.wa{background:var(--bg-warn)}
+.card .lbl{font-size:11px;color:var(--text2);margin-bottom:3px}
+.card.hi .lbl{color:var(--text-info)}.card.su .lbl{color:var(--text-success)}.card.wa .lbl{color:var(--text-warn)}
+.card .val{font-size:19px;font-weight:600;color:var(--text)}
+.card.hi .val{color:var(--text-info)}.card.su .val{color:var(--text-success)}.card.wa .val{color:var(--text-warn)}
+.card .sub{font-size:10px;color:var(--text3);margin-top:2px}
+.tbl{width:100%;font-size:13px;border-collapse:collapse}
+.tbl td{padding:4px 0;border-bottom:.5px solid var(--border);color:var(--text)}
+.tbl td:last-child{text-align:right;font-weight:500}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.tot td{font-size:13px;padding-top:8px;border-top:.5px solid var(--border2);border-bottom:none;font-weight:600}
+.box{background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-top:8px}
+.note{font-size:12px;color:var(--text3);line-height:1.5;margin-top:6px}
+.divider{border:none;border-top:.5px solid var(--border);margin:1.25rem 0}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;padding:10px 20px;cursor:pointer;border-radius:var(--r);border:none;background:#185fa5;color:#fff;transition:background .15s}
+.btn-primary:hover{background:#0c447c}
+.btn-primary:disabled{background:var(--bg2);color:var(--text3);cursor:not-allowed}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;font-size:13px;padding:8px 16px;cursor:pointer;border-radius:var(--r);border:.5px solid var(--border2);background:var(--bg);color:var(--text);transition:background .15s}
+.btn-secondary:hover{background:var(--bg2)}
+.preview{background:var(--bg2);border-radius:var(--rl);padding:1.5rem;margin-top:1rem;border:.5px solid var(--border);font-family:'Times New Roman',serif;font-size:14px;line-height:1.7;white-space:pre-wrap}
+.preview .ph{background:var(--bg-info);color:var(--text-info);border-radius:3px;padding:0 3px;font-style:italic}
+.check-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.check-row input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.check-row label{font-size:13px;color:var(--text);cursor:pointer}
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:12px}
+.alert.info{background:var(--bg-info);color:var(--text-info)}
+.tramo-box{border:.5px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:8px}
+.tramo-box h5{font-size:12px;font-weight:600;margin:0 0 6px}
+.action-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:1rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Auto de Extinción — art. 281 LRJS</h1>
+    <p>Tribunal de Instancia · Sección Social · Metodología CGPJ (guía v.0.5, octubre 2024)</p>
+  </header>
+
+  <div class="steps">
+    <button class="step-btn active" onclick="goStep(1,this)">① Datos del procedimiento</button>
+    <button class="step-btn" onclick="goStep(2,this)">② Cálculo económico</button>
+    <button class="step-btn" onclick="goStep(3,this)">③ Generar auto</button>
+  </div>
+
+  <!-- PASO 1: Datos -->
+  <div id="step1" class="step-panel active">
+    <div class="sec">
+      <h3>Identificación del procedimiento</h3>
+      <div class="row2">
+        <div class="f"><label>Nº de unidad <span>*</span></label><input type="number" id="numUnidad" value="22" min="1"></div>
+        <div class="f"><label>Ciudad <span>*</span></label><input type="text" id="ciudad" value="Barcelona"></div>
+      </div>
+      <div class="row3">
+        <div class="f"><label>Nº de autos <span>*</span></label><input type="number" id="numAutos" placeholder="10" min="1"></div>
+        <div class="f"><label>Año <span>*</span></label><input type="number" id="anio" value="2026" min="2020"></div>
+        <div class="f"><label>Fecha del auto <span>*</span></label><input type="date" id="fechaAuto" value="2026-05-12"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label>Fecha de la sentencia previa <span>*</span></label><input type="date" id="fechaSentencia"></div>
+        <div class="f"><label>Fecha de la comparecencia <span>*</span></label><input type="date" id="fechaComparecencia"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>Partes</h3>
+      <div class="row2">
+        <div class="f"><label>Nombre completo del/la trabajador/a <span>*</span></label><input type="text" id="nombreTrabajador" placeholder="ej. Muhammad Nawaz"></div>
+        <div class="f">
+          <label>Género</label>
+          <select id="genero">
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+        </div>
+      </div>
+      <div class="f"><label>Nombre de la empresa demandada <span>*</span></label><input type="text" id="nombreEmpresa" placeholder="ej. Shabbir Const., S.L."></div>
+    </div>
+
+    <div class="sec">
+      <h3>Datos laborales</h3>
+      <div class="row3">
+        <div class="f"><label>Fecha de alta <span>*</span></label><input type="date" id="fechaAlta"></div>
+        <div class="f"><label>Fecha del despido <span>*</span></label><input type="date" id="fechaDespido"></div>
+        <div class="f"><label>Salario mensual bruto (con PP pagas) <span>*</span></label><input type="number" id="salarioMensual" placeholder="1921.10" step="0.01" min="0"></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-primary" onclick="goStep(2, document.querySelectorAll('.step-btn')[1])">Siguiente → Cálculo económico</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: Cálculo -->
+  <div id="step2" class="step-panel">
+    <div class="alert info">La indemnización se calcula desde la fecha de alta hasta la fecha del <strong>auto</strong> (no la del despido), conforme a la doctrina del art. 281 LRJS.</div>
+
+    <div id="calculo-resultado"></div>
+
+    <hr class="divider">
+    <div class="sec">
+      <h3>Ajustes opcionales</h3>
+      <div class="row2">
+        <div class="f"><label>Indemnización ya abonada por la empresa (€)</label><input type="number" id="yaAbonado" value="0" step="0.01" min="0" oninput="recalc()"></div>
+        <div class="f"><label>Cantidad condenada en sentencia pendiente (€)</label><input type="number" id="cantidadSentencia" value="0" step="0.01" min="0" oninput="recalc()"></div>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="intereses" onchange="recalc()">
+        <label for="intereses">Añadir interés de demora del 10% a la cantidad de sentencia</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="diaNext" checked onchange="recalc()">
+        <label for="diaNext">Tramitación desde el día <em>siguiente</em> al despido (habitual en despido con readmisión fallida)</label>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-secondary" onclick="goStep(1, document.querySelectorAll('.step-btn')[0])">← Volver</button>
+      <button class="btn-primary" onclick="goStep(3, document.querySelectorAll('.step-btn')[2])">Siguiente → Generar auto</button>
+    </div>
+  </div>
+
+  <!-- PASO 3: Generar -->
+  <div id="step3" class="step-panel">
+    <div class="sec">
+      <h3>Vista previa del auto</h3>
+      <div id="preview-auto" class="preview"></div>
+    </div>
+    <div class="action-row">
+      <button class="btn-primary" id="btn-descargar" onclick="descargarDocx()">⬇ Descargar .docx</button>
+      <button class="btn-secondary" onclick="goStep(2, document.querySelectorAll('.step-btn')[1])">← Volver y editar</button>
+    </div>
+    <p class="note" style="margin-top:10px">El archivo se genera en tu navegador y se descarga directamente. No se envía a ningún servidor.</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script>
+// ─── Estado global ────────────────────────────────────────────────────────────
+let state = {};
+
+// ─── Navegación ───────────────────────────────────────────────────────────────
+function goStep(n, btn) {
+  if(n === 2) { recogerDatos(); calcular(); }
+  if(n === 3) { generarPreview(); }
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('step'+n).classList.add('active');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const REFORMA = new Date('2012-02-12');
+function dias(d1, d2) { return Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000)); }
+function fmt(n) { return parseFloat(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function fmtE(n) { return parseFloat(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' euros'; }
+function fmtD(n) { return parseFloat(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function fechaLarga(str) {
+  if(!str) return '';
+  const d = new Date(str+'T12:00:00');
+  return d.toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+}
+
+function fechaCorta(str) {
+  if(!str) return '';
+  const d = new Date(str+'T12:00:00');
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// ─── Recoger datos ────────────────────────────────────────────────────────────
+function recogerDatos() {
+  state.numUnidad = document.getElementById('numUnidad').value;
+  state.ciudad = document.getElementById('ciudad').value;
+  state.numAutos = document.getElementById('numAutos').value;
+  state.anio = document.getElementById('anio').value;
+  state.fechaAutoStr = document.getElementById('fechaAuto').value;
+  state.fechaSentenciaStr = document.getElementById('fechaSentencia').value;
+  state.fechaComparecenciaStr = document.getElementById('fechaComparecencia').value;
+  state.nombreTrabajador = document.getElementById('nombreTrabajador').value;
+  state.genero = document.getElementById('genero').value;
+  state.nombreEmpresa = document.getElementById('nombreEmpresa').value;
+  state.fechaAltaStr = document.getElementById('fechaAlta').value;
+  state.fechaDespidoStr = document.getElementById('fechaDespido').value;
+  state.salarioMensual = parseFloat(document.getElementById('salarioMensual').value)||0;
+  state.salarioDiario = state.salarioMensual * 12 / 365;
+}
+
+// ─── Cálculo económico ────────────────────────────────────────────────────────
+function calcular() {
+  if(!state.fechaAltaStr || !state.fechaAutoStr || !state.salarioMensual) {
+    document.getElementById('calculo-resultado').innerHTML = '<p class="note">Faltan datos en el paso anterior.</p>';
+    return;
+  }
+
+  const alta = state.fechaAltaStr;
+  const auto = state.fechaAutoStr;
+  const desp = state.fechaDespidoStr;
+  const sal = state.salarioDiario;
+  const yaAbonado = parseFloat(document.getElementById('yaAbonado').value)||0;
+  const cantSentencia = parseFloat(document.getElementById('cantidadSentencia').value)||0;
+  const conIntereses = document.getElementById('intereses').checked;
+  const diaNext = document.getElementById('diaNext').checked;
+
+  // Indemnización: alta → fecha auto (doble tramo si procede)
+  let indem, tramoHtml = '';
+  const altaDate = new Date(alta);
+
+  if(altaDate >= REFORMA) {
+    const d = dias(alta, auto);
+    const anios = d/365;
+    indem = sal * 33 * anios;
+    const max = sal * 720;
+    const topado = indem > max;
+    if(topado) indem = max;
+    tramoHtml = `<div class="tramo-box"><h5>Tramo único (contrato posterior a 12/02/2012)</h5>
+    <table class="tbl">
+      <tr><td>Días antigüedad (alta → auto)</td><td>${Math.round(d)} días</td></tr>
+      <tr><td>Equivalente en años</td><td>${anios.toFixed(6)}</td></tr>
+      <tr><td>33 días/año × ${anios.toFixed(6)} años</td><td>${(33*anios).toFixed(6)} días</td></tr>
+      <tr class="tot"><td>Indemnización</td><td>${fmt(indem)}</td></tr>
+    </table>${topado?'<p class="note" style="color:var(--text-warn)">⚠ Tope de 720 días aplicado.</p>':''}</div>`;
+  } else {
+    const d1 = dias(alta,'2012-02-12');
+    const anios1 = d1/365;
+    let i1 = sal*45*anios1;
+    if(i1 > sal*720) i1 = sal*720;
+    const d2 = dias('2012-02-12', auto);
+    const anios2 = d2/365;
+    let i2 = sal*33*anios2;
+    let total = i1+i2;
+    if(total > sal*720){ total=sal*720; i2=total-i1; }
+    indem = total;
+    tramoHtml = `<div class="tramo-box"><h5>Tramo anterior a 12/02/2012 (45 días/año)</h5>
+    <table class="tbl">
+      <tr><td>Días</td><td>${Math.round(d1)} días (${anios1.toFixed(4)} años)</td></tr>
+      <tr class="tot"><td>Subtotal</td><td>${fmt(i1)}</td></tr>
+    </table></div>
+    <div class="tramo-box"><h5>Tramo posterior a 12/02/2012 (33 días/año)</h5>
+    <table class="tbl">
+      <tr><td>Días</td><td>${Math.round(d2)} días (${anios2.toFixed(4)} años)</td></tr>
+      <tr class="tot"><td>Subtotal</td><td>${fmt(i2)}</td></tr>
+    </table></div>
+    <div class="box"><table class="tbl"><tr class="tot"><td>Indemnización total</td><td>${fmt(indem)}</td></tr></table></div>`;
+  }
+
+  // Salarios de tramitación: despido (+1 si checkbox) → auto
+  const inicioTram = diaNext
+    ? new Date(new Date(desp+'T12:00:00').getTime() + 86400000).toISOString().slice(0,10)
+    : desp;
+  const diasTram = dias(inicioTram, auto);
+  const tramitacion = diasTram * sal;
+
+  // Guardar en state
+  state.indem = indem;
+  state.tramitacion = tramitacion;
+  state.yaAbonado = yaAbonado;
+  state.cantSentencia = cantSentencia;
+  state.conIntereses = conIntereses;
+  state.diasTram = diasTram;
+  state.diaNext = diaNext;
+
+  const html = `
+    <div class="sec"><h3>Indemnización (art. 56.1 ET · fecha auto)</h3>${tramoHtml}</div>
+    <div class="sec"><h3>Salarios de tramitación</h3>
+    <div class="box"><table class="tbl">
+      <tr><td>Inicio tramitación</td><td>${fechaCorta(inicioTram)}${diaNext?' (día siguiente al despido)':''}</td></tr>
+      <tr><td>Fin tramitación</td><td>${fechaCorta(auto)} (fecha del auto)</td></tr>
+      <tr><td>Días</td><td>${diasTram} días</td></tr>
+      <tr><td>Salario diario (${fmtD(state.salarioMensual)} × 12 / 365)</td><td>${fmtD(sal)} €/día</td></tr>
+      <tr class="tot"><td>Salarios de tramitación</td><td>${fmt(tramitacion)}</td></tr>
+    </table></div></div>
+    <div class="cards">
+      <div class="card hi"><div class="lbl">Indemnización</div><div class="val">${fmt(indem)}</div>
+        ${yaAbonado>0?`<div class="sub">Ya abonados: ${fmt(yaAbonado)}</div>`:''}</div>
+      <div class="card"><div class="lbl">Tramitación</div><div class="val">${fmt(tramitacion)}</div><div class="sub">${diasTram} días</div></div>
+      <div class="card su"><div class="lbl">Total</div><div class="val">${fmt(indem+tramitacion)}</div></div>
+      ${cantSentencia>0?`<div class="card wa"><div class="lbl">Cantidad sentencia</div><div class="val">${fmt(cantSentencia)}</div><div class="sub">${conIntereses?'+ 10% intereses':''}</div></div>`:''}
+    </div>`;
+  document.getElementById('calculo-resultado').innerHTML = html;
+}
+
+function recalc() { recogerDatos(); calcular(); }
+
+// ─── Vista previa ─────────────────────────────────────────────────────────────
+function generarPreview() {
+  recogerDatos();
+  const g = state.genero;
+  const elLa = g==='F'?'la':'el';
+  const actorActora = g==='F'?'actora':'actor';
+  const trabTrab = g==='F'?'trabajadora':'trabajador';
+  const dnaDon = g==='F'?'Dña.':'D.';
+  const indemFmt = fmtE(state.indem);
+  const tramFmt = fmtE(state.tramitacion);
+
+  let falloIndem = `— Indemnización por despido: ${indemFmt}`;
+  if(state.yaAbonado>0) falloIndem += ` (sin perjuicio de los ${fmtE(state.yaAbonado)} ya abonados)`;
+  falloIndem += '.';
+
+  let falloCantSent = '';
+  if(state.cantSentencia>0) {
+    falloCantSent = `\n— Cantidad condenada en sentencia: ${fmtE(state.cantSentencia)}${state.conIntereses?' con el interés de demora del 10%':''}.`;
+  }
+
+  const txt = `TRIBUNAL DE INSTANCIA
+SECCIÓN SOCIAL
+UNIDAD Nº ${state.numUnidad}
+${state.ciudad.toUpperCase()}
+${state.numAutos}/${state.anio}
+
+AUTO
+
+	En ${state.ciudad}, a ${fechaLarga(state.fechaAutoStr)}
+
+ANTECEDENTES DE HECHO
+
+	Primero.- En el presente procedimiento se dictó sentencia de ${fechaLarga(state.fechaSentenciaStr)}, por la que se declaraba la improcedencia del despido del ${actorActora} y se condenaba a la empresa a que, en su elección, readmitiese al ${trabTrab} en su puesto de trabajo o le indemnizase en la cantidad correspondiente.
+
+	Segundo.- Por la parte demandada no se ha ejercitado la opción.
+
+	Tercero.- El día ${fechaLarga(state.fechaComparecenciaStr)} se celebró la preceptiva comparecencia, compareciendo exclusivamente la parte actora.
+
+			FUNDAMENTOS JURÍDICOS
+
+	Único.- En el presente auto, se ha acreditado por la parte ejecutante que la readmisión no ha tenido lugar, extremo que no ha sido negado por la ejecutada, al no haber comparecido. Es por ello que procede declarar la extinción de la relación laboral con fecha de la presente resolución y demás consecuencias contempladas en el art. 281 de la LRJS.
+
+	Dichas consecuencias son las siguientes: la indemnización del art. 56.1 ET calculada a la fecha del presente auto, así como los salarios de tramitación que deben ser los devengados desde el día siguiente a la fecha del despido (${fechaCorta(state.fechaDespidoStr)}) hasta la fecha del auto de extinción (${fechaCorta(state.fechaAutoStr)}), conforme a un salario diario de ${fmtD(state.salarioDiario)} euros (${fmtD(state.salarioMensual)} € × 12 / 365).
+
+	Por todo ello,
+
+PARTE DISPOSITIVA
+
+	Se declara extinguida en esta fecha la relación laboral existente entre ${dnaDon} ${state.nombreTrabajador} y ${state.nombreEmpresa}, y se condena a esta a abonar al ${trabTrab} las siguientes cantidades:
+
+	${falloIndem}
+	— Salarios de tramitación: ${tramFmt}.${falloCantSent}
+
+	Notifíquese a las partes la presente resolución, advirtiéndoles que contra la misma podrán interponer recurso de reposición ante este Juzgado dentro de los tres días hábiles siguientes al de su notificación.
+
+	Así por esta resolución lo dispone, manda y firma D. Pablo Baró Martín, Magistrado - Juez.`;
+
+  state.textoAuto = txt;
+  document.getElementById('preview-auto').textContent = txt;
+}
+
+// ─── Generar DOCX en navegador ────────────────────────────────────────────────
+async function descargarDocx() {
+  const btn = document.getElementById('btn-descargar');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+    const g = state.genero;
+    const actorActora = g==='F'?'actora':'actor';
+    const trabTrab = g==='F'?'trabajadora':'trabajador';
+    const dnaDon = g==='F'?'Dña.':'D.';
+
+    function p(text, bold=false, center=false, indent=false) {
+      const children = [new TextRun({text, font:'Times New Roman', size:24, bold})];
+      return new Paragraph({
+        children,
+        alignment: center ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
+        indent: indent ? {left:720} : undefined,
+        spacing:{after:160}
+      });
+    }
+
+    function pTab(text) {
+      return new Paragraph({
+        children:[new TextRun({text:'\t'+text, font:'Times New Roman', size:24})],
+        alignment:AlignmentType.JUSTIFIED,
+        spacing:{after:160}
+      });
+    }
+
+    let falloIndem = `— Indemnización por despido: ${fmtE(state.indem)}`;
+    if(state.yaAbonado>0) falloIndem += ` (sin perjuicio de los ${fmtE(state.yaAbonado)} ya abonados)`;
+    falloIndem += '.';
+
+    const children = [
+      p('TRIBUNAL DE INSTANCIA', true, true),
+      p('SECCIÓN SOCIAL', true, true),
+      p(`UNIDAD Nº ${state.numUnidad}`, true, true),
+      p(state.ciudad.toUpperCase(), true, true),
+      p(`${state.numAutos}/${state.anio}`, true, true),
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:160}}),
+      p('AUTO', true, true),
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:160}}),
+      pTab(`En ${state.ciudad}, a ${fechaLarga(state.fechaAutoStr)}`),
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:160}}),
+      p('ANTECEDENTES DE HECHO', true, true),
+      pTab(`Primero.- En el presente procedimiento se dictó sentencia de ${fechaLarga(state.fechaSentenciaStr)}, por la que se declaraba la improcedencia del despido del ${actorActora} y se condenaba a la empresa a que, en su elección, readmitiese al ${trabTrab} en su puesto de trabajo o le indemnizase en la cantidad correspondiente.`),
+      pTab('Segundo.- Por la parte demandada no se ha ejercitado la opción.'),
+      pTab(`Tercero.- El día ${fechaLarga(state.fechaComparecenciaStr)} se celebró la preceptiva comparecencia, compareciendo exclusivamente la parte actora.`),
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:160}}),
+      p('FUNDAMENTOS JURÍDICOS', true, true),
+      pTab('Único.- En el presente auto, se ha acreditado por la parte ejecutante que la readmisión no ha tenido lugar, extremo que no ha sido negado por la ejecutada, al no haber comparecido. Es por ello que procede declarar la extinción de la relación laboral con fecha de la presente resolución y demás consecuencias contempladas en el art. 281 de la LRJS.'),
+      pTab(`Dichas consecuencias son las siguientes: la indemnización del art. 56.1 ET calculada a la fecha del presente auto, así como los salarios de tramitación que deben ser los devengados desde el día siguiente a la fecha del despido (${fechaCorta(state.fechaDespidoStr)}) hasta la fecha del auto de extinción (${fechaCorta(state.fechaAutoStr)}), conforme a un salario diario de ${fmtD(state.salarioDiario)} euros (${fmtD(state.salarioMensual)} € × 12 / 365).`),
+      pTab('Por todo ello,'),
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:160}}),
+      p('PARTE DISPOSITIVA', true, true),
+      pTab(`Se declara extinguida en esta fecha la relación laboral existente entre ${dnaDon} ${state.nombreTrabajador} y ${state.nombreEmpresa}, y se condena a esta a abonar al ${trabTrab} las siguientes cantidades:`),
+      new Paragraph({
+        children:[new TextRun({text:'\t'+falloIndem, font:'Times New Roman', size:24})],
+        alignment:AlignmentType.JUSTIFIED, spacing:{after:80}
+      }),
+      new Paragraph({
+        children:[new TextRun({text:`\t— Salarios de tramitación: ${fmtE(state.tramitacion)}.`, font:'Times New Roman', size:24})],
+        alignment:AlignmentType.JUSTIFIED, spacing:{after: state.cantSentencia>0 ? 80 : 160}
+      }),
+    ];
+
+    if(state.cantSentencia>0) {
+      const interStr = state.conIntereses?' con el interés de demora del 10%':'';
+      children.push(new Paragraph({
+        children:[new TextRun({text:`\t— Cantidad condenada en sentencia: ${fmtE(state.cantSentencia)}${interStr}.`, font:'Times New Roman', size:24})],
+        alignment:AlignmentType.JUSTIFIED, spacing:{after:160}
+      }));
+    }
+
+    children.push(
+      new Paragraph({children:[new TextRun({text:'',size:24})],spacing:{after:80}}),
+      pTab('Notifíquese a las partes la presente resolución, advirtiéndoles que contra la misma podrán interponer recurso de reposición ante este Juzgado dentro de los tres días hábiles siguientes al de su notificación.'),
+      pTab('Así por esta resolución lo dispone, manda y firma D. Pablo Baró Martín, Magistrado - Juez.')
+    );
+
+    const doc = new Document({
+      sections:[{
+        properties:{
+          page:{
+            size:{width:11906, height:16838},
+            margin:{top:1134, right:1134, bottom:1134, left:1701}
+          }
+        },
+        children
+      }]
+    });
+
+    const buf = await Packer.toBuffer(doc);
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `auto_extincion_${state.numAutos}_${state.anio}_unidad${state.numUnidad}.docx`;
+    a.click();
+  } catch(e) {
+    alert('Error al generar: '+e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Descargar .docx';
+}
+</script>
+</body>
+</html>
